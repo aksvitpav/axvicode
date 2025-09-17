@@ -1,0 +1,41 @@
+http:
+  routers:
+    app:
+      rule: "Host(`axvicode.test`)"
+      service: app
+      entryPoints:
+        - websecure
+      tls:
+        domains:
+          - main: "axvicode.test"
+    vite:
+      rule: "Host(`axvicode.test`) && (PathPrefix(`/@vite`) || PathPrefix(`/resources`))"
+      service: vite
+      entryPoints:
+        - websecure
+      tls: true
+    mailpit:
+      rule: "Host(`mail.axvicode.test`)"
+      service: mailpit
+      entryPoints:
+        - websecure
+      tls: true
+
+  services:
+    app:
+      loadBalancer:
+        servers:
+          - url: "http://axvicode_app:8000"
+    vite:
+      loadBalancer:
+        servers:
+          - url: "http://axvicode_app:5173"
+    mailpit:
+      loadBalancer:
+        servers:
+          - url: "http://axvicode_mailpit:8025"
+
+tls:
+  certificates:
+    - certFile: /certs/axvicode.test.crt
+      keyFile: /certs/axvicode.test.key
