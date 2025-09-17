@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+/docker/traefik/certs/axvicode.test.crt
+/docker/traefik/certs/axvicode.test.key
