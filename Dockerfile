@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
         libonig-dev libzip-dev zlib1g-dev libpq-dev libfreetype-dev \
         libjpeg62-turbo-dev libpng-dev git curl zip unzip libicu-dev \
         supervisor \
-    && docker-php-ext-install -j$(nproc) pcntl curl xml mbstring zip pdo pdo_pgsql bcmath gd intl \
+    && docker-php-ext-install -j$(nproc) pcntl curl xml mbstring zip pdo pdo_pgsql bcmath gd intl exif \
     && pecl install xdebug-3.4.2 redis \
     && docker-php-ext-enable xdebug redis
 
