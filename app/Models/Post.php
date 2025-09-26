@@ -2,7 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\PostObserver;
+use Filament\Forms\Components\RichEditor\FileAttachmentProviders\SpatieMediaLibraryFileAttachmentProvider;
+use Filament\Forms\Components\RichEditor\Models\Concerns\InteractsWithRichContent;
+use Filament\Forms\Components\RichEditor\Models\Contracts\HasRichContent;
 use Honeystone\Seo\MetadataDirector;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,11 +17,13 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Translatable\HasTranslations;
 
-class Post extends Model implements HasMedia
+#[ObservedBy([PostObserver::class])]
+class Post extends Model implements HasRichContent, HasMedia
 {
     use SoftDeletes;
     use HasTranslations;
     use InteractsWithMedia;
+    use InteractsWithRichContent;
 
     protected $fillable = [
         'title',
@@ -39,6 +46,17 @@ class Post extends Model implements HasMedia
         return 'slug';
     }
 
+    public function setUpRichContent(): void
+    {
+        foreach (config('app.available_locales') as $locale) {
+            $this->registerRichContent("content.{$locale}")
+                ->fileAttachmentProvider(
+                    SpatieMediaLibraryFileAttachmentProvider::make()
+                        ->collection("post-content-{$locale}"),
+                );
+        }
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('cover')->singleFile()->useDisk('public');
@@ -47,6 +65,7 @@ class Post extends Model implements HasMedia
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
+            ->performOnCollections('cover')
             ->width(300)
             ->height(200)
             ->sharpen(10)
@@ -60,7 +79,7 @@ class Post extends Model implements HasMedia
         return seo()
             ->title($this->meta_title ?: $this->title)
             ->description($this->meta_description ?: $this->excerpt)
-            ->keywords(...explode(',', $this->meta_keywords ?? null))
+            ->keywords(...explode(',', $this->meta_keywords))
             ->url(route('posts.show', $this->slug))
             ->images($coverUrl)
             ->twitterImage($coverUrl)
@@ -83,7 +102,7 @@ class Post extends Model implements HasMedia
         return $this->belongsToMany(Tag::class, 'post_tag')
             ->withPivot('order')
             ->withTimestamps()
-            ->orderBy('pivot_order');
+            ->orderBy('order');
     }
 
     public function author(): BelongsTo
